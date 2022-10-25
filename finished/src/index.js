@@ -1,35 +1,6 @@
-/*
-The `piggybankContract` is compiled from:
-
-  pragma solidity ^0.4.0;
-  contract PiggyBank {
-
-      uint private balance;
-      address public owner;
-
-      function PiggyBank() public {
-          owner = msg.sender;
-          balance = 0;
-      }
-
-      function deposit() public payable returns (uint) {
-          balance += msg.value;
-          return balance;
-      }
-
-      function withdraw(uint withdrawAmount) public returns (uint remainingBal) {
-          require(msg.sender == owner);
-          balance -= withdrawAmount;
-
-          msg.sender.transfer(withdrawAmount);
-
-          return balance;
-      }
-  }
-*/
-
 import { encrypt } from 'eth-sig-util'
 import MetaMaskOnboarding from '@metamask/onboarding'
+import { ethers } from 'ethers'
 
 const currentUrl = new URL(window.location.href)
 const forwarderOrigin = currentUrl.hostname === 'localhost'
@@ -86,6 +57,249 @@ const encryptionKeyDisplay = document.getElementById('encryptionKeyDisplay')
 const ciphertextDisplay = document.getElementById('ciphertextDisplay')
 const cleartextDisplay = document.getElementById('cleartextDisplay')
 
+const abi = [
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_controler",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_gracePeriodBlocks",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_ownerID",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_heirID",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "payable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256[2]",
+        "name": "a",
+        "type": "uint256[2]"
+      },
+      {
+        "internalType": "uint256[2][2]",
+        "name": "b",
+        "type": "uint256[2][2]"
+      },
+      {
+        "internalType": "uint256[2]",
+        "name": "c",
+        "type": "uint256[2]"
+      }
+    ],
+    "name": "cancelControllerChange",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newController",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256[2]",
+        "name": "a",
+        "type": "uint256[2]"
+      },
+      {
+        "internalType": "uint256[2][2]",
+        "name": "b",
+        "type": "uint256[2][2]"
+      },
+      {
+        "internalType": "uint256[2]",
+        "name": "c",
+        "type": "uint256[2]"
+      }
+    ],
+    "name": "changeControllerInstantly",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "controller",
+    "outputs": [
+      {
+        "internalType": "address payable",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "finalizeControllerChange",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "gracePeriodBlocks",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "heirID",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newController",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256[2]",
+        "name": "a",
+        "type": "uint256[2]"
+      },
+      {
+        "internalType": "uint256[2][2]",
+        "name": "b",
+        "type": "uint256[2][2]"
+      },
+      {
+        "internalType": "uint256[2]",
+        "name": "c",
+        "type": "uint256[2]"
+      }
+    ],
+    "name": "initControllerChange",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "ownerID",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "pendingController",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "pendingOwnerID",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "pendingOwnerStartBlock",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address payable",
+        "name": "_to",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "transfer",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]
+
+const contractAddress = '0xa76419bfa3f732666c4ba5c909b304fca7d245f3'
+const provider = new ethers.providers.Web3Provider(window.ethereum)
+const contract = new ethers.Contract(contractAddress, abi, provider)
+
 const initialize = async () => {
 
   let onboarding
@@ -115,6 +329,20 @@ const initialize = async () => {
     encryptButton,
     decryptButton,
   ]
+
+  deployButton.onclick = async () => {
+    // Just checking the contract stateless function to make sure it's working
+    const gracePeriodBlocks = await contract.gracePeriodBlocks().catch(err => {
+      contractStatus.innerHTML = `Error reading gracePeriodBlocks.
+          Check the network in metamask is Goerli testnet.
+          Error: ${err}`
+    })
+    console.log('gracePeriodBlocks: ', gracePeriodBlocks.toNumber())
+
+    contractStatus.innerHTML = `Just checking existing contract in Goerli testnet 
+    at address ${contractAddress} to make sure it's working. 
+    Result is OK!!! gracePeriodBlocks: ${gracePeriodBlocks.toNumber()}`
+  }
 
   const isMetaMaskConnected = () => accounts && accounts.length > 0
 
@@ -184,56 +412,6 @@ const initialize = async () => {
     /**
      * Contract Interactions
      */
-
-    piggybankContract = web3.eth.contract([{ 'constant': false, 'inputs': [{ 'name': 'withdrawAmount', 'type': 'uint256' }], 'name': 'withdraw', 'outputs': [{ 'name': 'remainingBal', 'type': 'uint256' }], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'owner', 'outputs': [{ 'name': '', 'type': 'address' }], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': false, 'inputs': [], 'name': 'deposit', 'outputs': [{ 'name': '', 'type': 'uint256' }], 'payable': true, 'stateMutability': 'payable', 'type': 'function' }, { 'inputs': [], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'constructor' }])
-    deployButton.onclick = async () => {
-      contractStatus.innerHTML = 'Deploying'
-
-      const piggybank = await piggybankContract.new(
-        {
-          from: accounts[0],
-          data: '0x608060405234801561001057600080fd5b5033600160006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055506000808190555061023b806100686000396000f300608060405260043610610057576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680632e1a7d4d1461005c5780638da5cb5b1461009d578063d0e30db0146100f4575b600080fd5b34801561006857600080fd5b5061008760048036038101908080359060200190929190505050610112565b6040518082815260200191505060405180910390f35b3480156100a957600080fd5b506100b26101d0565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b6100fc6101f6565b6040518082815260200191505060405180910390f35b6000600160009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614151561017057600080fd5b8160008082825403925050819055503373ffffffffffffffffffffffffffffffffffffffff166108fc839081150290604051600060405180830381858888f193505050501580156101c5573d6000803e3d6000fd5b506000549050919050565b600160009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b60003460008082825401925050819055506000549050905600a165627a7a72305820f237db3ec816a52589d82512117bc85bc08d3537683ffeff9059108caf3e5d400029',
-          gas: '4700000',
-        }, (error, contract) => {
-          if (error) {
-            contractStatus.innerHTML = 'Deployment Failed'
-            throw error
-          } else if (contract.address === undefined) {
-            return
-          }
-
-          console.log(`Contract mined! address: ${contract.address} transactionHash: ${contract.transactionHash}`)
-          contractStatus.innerHTML = 'Deployed'
-          depositButton.disabled = false
-          withdrawButton.disabled = false
-
-          depositButton.onclick = () => {
-            contractStatus.innerHTML = 'Deposit initiated'
-            contract.deposit(
-              {
-                from: accounts[0],
-                value: '0x3782dace9d900000',
-              },
-              (result) => {
-                console.log(result)
-                contractStatus.innerHTML = 'Deposit completed'
-              },
-            )
-          }
-          withdrawButton.onclick = () => {
-            contract.withdraw(
-              '0xde0b6b3a7640000',
-              { from: accounts[0] },
-              (result) => {
-                console.log(result)
-                contractStatus.innerHTML = 'Withdrawn'
-              },
-            )
-          }
-        },
-      )
-      console.log(piggybank)
-    }
 
     /**
      * Sending ETH
@@ -345,6 +523,8 @@ const initialize = async () => {
     signTypedData.onclick = async () => {
       const networkId = parseInt(networkDiv.innerHTML, 10)
       const chainId = parseInt(chainIdDiv.innerHTML, 10) || networkId
+      const ownerId = 1
+      const ownerAddress = '0xa76419bfa3f732666c4ba5c909b304fca7d245f3'
 
       const typedData = {
         types: {
@@ -354,33 +534,21 @@ const initialize = async () => {
             { name: 'chainId', type: 'uint256' },
             { name: 'verifyingContract', type: 'address' },
           ],
-          Person: [
-            { name: 'name', type: 'string' },
-            { name: 'wallet', type: 'address' },
-          ],
-          Mail: [
-            { name: 'from', type: 'Person' },
-            { name: 'to', type: 'Person' },
-            { name: 'contents', type: 'string' },
+          InheritanceMessage: [
+            { name: 'ownerId', type: 'uint' },
+            { name: 'ownerAddress', type: 'address' },
           ],
         },
-        primaryType: 'Mail',
+        primaryType: 'InheritanceMessage',
         domain: {
-          name: 'Ether Mail',
+          name: 'Inheritance Message',
           version: '1',
           chainId,
-          verifyingContract: '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC',
+          verifyingContract: ownerAddress,
         },
         message: {
-          sender: {
-            name: 'Cow',
-            wallet: '0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826',
-          },
-          recipient: {
-            name: 'Bob',
-            wallet: '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB',
-          },
-          contents: 'Hello, Bob!',
+          ownerId,
+          ownerAddress,
         },
       }
 
@@ -457,8 +625,8 @@ const initialize = async () => {
 
     encryptMessageInput.onkeyup = () => {
       if (
-        !getEncryptionKeyButton.disabled &&
-        encryptMessageInput.value.length > 0
+          !getEncryptionKeyButton.disabled &&
+          encryptMessageInput.value.length > 0
       ) {
         if (encryptButton.disabled) {
           encryptButton.disabled = false
@@ -471,11 +639,11 @@ const initialize = async () => {
     encryptButton.onclick = () => {
       try {
         ciphertextDisplay.innerText = web3.toHex(JSON.stringify(
-          encrypt(
-            encryptionKeyDisplay.innerText,
-            { 'data': encryptMessageInput.value },
-            'x25519-xsalsa20-poly1305',
-          ),
+            encrypt(
+                encryptionKeyDisplay.innerText,
+                { 'data': encryptMessageInput.value },
+                'x25519-xsalsa20-poly1305',
+            ),
         ))
         decryptButton.disabled = false
       } catch (error) {

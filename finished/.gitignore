@@ -1,4 +1,15 @@
 package-lock.json
 node_modules
 .vscode
+.idea
 dist
+
+.env
+coverage
+coverage.json
+typechain
+typechain-types
+
+#Hardhat files
+cache
+artifacts
