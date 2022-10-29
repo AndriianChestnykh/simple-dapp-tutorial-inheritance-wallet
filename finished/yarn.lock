@@ -5570,7 +5570,7 @@
   dependencies:
     "obliterator" "^2.0.0"
 
-"mocha@^10.0.0":
+"mocha@^10.0.0", "mocha@^10.1.0":
   "integrity" "sha512-vUF7IYxEoN7XhQpFLxQAEMtE4W91acW4B6En9l97MwE9stL1A9gusXfoHZCLVHDUJ/7V5+lbCM6yMqzo5vNymg=="
   "resolved" "https://registry.npmjs.org/mocha/-/mocha-10.1.0.tgz"
   "version" "10.1.0"

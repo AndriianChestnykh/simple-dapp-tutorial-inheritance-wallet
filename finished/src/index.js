@@ -2,6 +2,9 @@ import { encrypt } from 'eth-sig-util'
 import MetaMaskOnboarding from '@metamask/onboarding'
 import { ethers } from 'ethers'
 
+import WalletArtifact from '../artifacts/contracts/Wallet.sol/Wallet.json'
+
+const { abi: walletAbi, bytecode: walletBytecode } = WalletArtifact
 const currentUrl = new URL(window.location.href)
 const forwarderOrigin = currentUrl.hostname === 'localhost'
   ? 'http://localhost:9010'
@@ -57,248 +60,6 @@ const encryptionKeyDisplay = document.getElementById('encryptionKeyDisplay')
 const ciphertextDisplay = document.getElementById('ciphertextDisplay')
 const cleartextDisplay = document.getElementById('cleartextDisplay')
 
-const abi = [
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_controler",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_gracePeriodBlocks",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_ownerID",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_heirID",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "payable",
-    "type": "constructor"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "id",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256[2]",
-        "name": "a",
-        "type": "uint256[2]"
-      },
-      {
-        "internalType": "uint256[2][2]",
-        "name": "b",
-        "type": "uint256[2][2]"
-      },
-      {
-        "internalType": "uint256[2]",
-        "name": "c",
-        "type": "uint256[2]"
-      }
-    ],
-    "name": "cancelControllerChange",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "newController",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "id",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256[2]",
-        "name": "a",
-        "type": "uint256[2]"
-      },
-      {
-        "internalType": "uint256[2][2]",
-        "name": "b",
-        "type": "uint256[2][2]"
-      },
-      {
-        "internalType": "uint256[2]",
-        "name": "c",
-        "type": "uint256[2]"
-      }
-    ],
-    "name": "changeControllerInstantly",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "controller",
-    "outputs": [
-      {
-        "internalType": "address payable",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "finalizeControllerChange",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "gracePeriodBlocks",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "heirID",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "newController",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "id",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256[2]",
-        "name": "a",
-        "type": "uint256[2]"
-      },
-      {
-        "internalType": "uint256[2][2]",
-        "name": "b",
-        "type": "uint256[2][2]"
-      },
-      {
-        "internalType": "uint256[2]",
-        "name": "c",
-        "type": "uint256[2]"
-      }
-    ],
-    "name": "initControllerChange",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "ownerID",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "pendingController",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "pendingOwnerID",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "pendingOwnerStartBlock",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address payable",
-        "name": "_to",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "transfer",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  }
-]
-
-const contractAddress = '0xa76419bfa3f732666c4ba5c909b304fca7d245f3'
-const provider = new ethers.providers.Web3Provider(window.ethereum)
-const contract = new ethers.Contract(contractAddress, abi, provider)
 
 const initialize = async () => {
 
@@ -309,8 +70,9 @@ const initialize = async () => {
     console.error(error)
   }
 
+  const provider = new ethers.providers.Web3Provider(window.ethereum)
+
   let accounts
-  let piggybankContract
   let accountButtonsInitialized = false
 
   const accountButtons = [
@@ -331,17 +93,16 @@ const initialize = async () => {
   ]
 
   deployButton.onclick = async () => {
-    // Just checking the contract stateless function to make sure it's working
-    const gracePeriodBlocks = await contract.gracePeriodBlocks().catch(err => {
-      contractStatus.innerHTML = `Error reading gracePeriodBlocks.
-          Check the network in metamask is Goerli testnet.
-          Error: ${err}`
-    })
-    console.log('gracePeriodBlocks: ', gracePeriodBlocks.toNumber())
+    const gracePeriodBlocks = 10
+    const ownerID = 1
+    const heirID = 2
+    const walletAmount = ethers.utils.parseEther('1.0')
 
-    contractStatus.innerHTML = `Just checking existing contract in Goerli testnet 
-    at address ${contractAddress} to make sure it's working. 
-    Result is OK!!! gracePeriodBlocks: ${gracePeriodBlocks.toNumber()}`
+    const signer = provider.getSigner(0)
+    const Wallet = new ethers.ContractFactory(walletAbi, walletBytecode, signer)
+    const wallet = await Wallet.deploy(signer.getAddress(), gracePeriodBlocks, ownerID, heirID, { value: walletAmount })
+    await wallet.deployed()
+    contractStatus.innerHTML = `Contract successfully deployed to ${wallet.address}`
   }
 
   const isMetaMaskConnected = () => accounts && accounts.length > 0
@@ -438,7 +199,127 @@ const initialize = async () => {
       const _tokenName = 'TST'
       const _decimalUnits = 0
       const _tokenSymbol = 'TST'
-      const humanstandardtokenContract = web3.eth.contract([{ 'constant': true, 'inputs': [], 'name': 'name', 'outputs': [{ 'name': '', 'type': 'string' }], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': false, 'inputs': [{ 'name': '_spender', 'type': 'address' }, { 'name': '_value', 'type': 'uint256' }], 'name': 'approve', 'outputs': [{ 'name': 'success', 'type': 'bool' }], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'totalSupply', 'outputs': [{ 'name': '', 'type': 'uint256' }], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': false, 'inputs': [{ 'name': '_from', 'type': 'address' }, { 'name': '_to', 'type': 'address' }, { 'name': '_value', 'type': 'uint256' }], 'name': 'transferFrom', 'outputs': [{ 'name': 'success', 'type': 'bool' }], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'decimals', 'outputs': [{ 'name': '', 'type': 'uint8' }], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'version', 'outputs': [{ 'name': '', 'type': 'string' }], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': true, 'inputs': [{ 'name': '_owner', 'type': 'address' }], 'name': 'balanceOf', 'outputs': [{ 'name': 'balance', 'type': 'uint256' }], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': true, 'inputs': [], 'name': 'symbol', 'outputs': [{ 'name': '', 'type': 'string' }], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'constant': false, 'inputs': [{ 'name': '_to', 'type': 'address' }, { 'name': '_value', 'type': 'uint256' }], 'name': 'transfer', 'outputs': [{ 'name': 'success', 'type': 'bool' }], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'constant': false, 'inputs': [{ 'name': '_spender', 'type': 'address' }, { 'name': '_value', 'type': 'uint256' }, { 'name': '_extraData', 'type': 'bytes' }], 'name': 'approveAndCall', 'outputs': [{ 'name': 'success', 'type': 'bool' }], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function' }, { 'constant': true, 'inputs': [{ 'name': '_owner', 'type': 'address' }, { 'name': '_spender', 'type': 'address' }], 'name': 'allowance', 'outputs': [{ 'name': 'remaining', 'type': 'uint256' }], 'payable': false, 'stateMutability': 'view', 'type': 'function' }, { 'inputs': [{ 'name': '_initialAmount', 'type': 'uint256' }, { 'name': '_tokenName', 'type': 'string' }, { 'name': '_decimalUnits', 'type': 'uint8' }, { 'name': '_tokenSymbol', 'type': 'string' }], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'constructor' }, { 'payable': false, 'stateMutability': 'nonpayable', 'type': 'fallback' }, { 'anonymous': false, 'inputs': [{ 'indexed': true, 'name': '_from', 'type': 'address' }, { 'indexed': true, 'name': '_to', 'type': 'address' }, { 'indexed': false, 'name': '_value', 'type': 'uint256' }], 'name': 'Transfer', 'type': 'event' }, { 'anonymous': false, 'inputs': [{ 'indexed': true, 'name': '_owner', 'type': 'address' }, { 'indexed': true, 'name': '_spender', 'type': 'address' }, { 'indexed': false, 'name': '_value', 'type': 'uint256' }], 'name': 'Approval', 'type': 'event' }])
+      const humanstandardtokenContract = web3.eth.contract([{
+        'constant': true,
+        'inputs': [],
+        'name': 'name',
+        'outputs': [{ 'name': '', 'type': 'string' }],
+        'payable': false,
+        'stateMutability': 'view',
+        'type': 'function',
+      }, {
+        'constant': false,
+        'inputs': [{ 'name': '_spender', 'type': 'address' }, { 'name': '_value', 'type': 'uint256' }],
+        'name': 'approve',
+        'outputs': [{ 'name': 'success', 'type': 'bool' }],
+        'payable': false,
+        'stateMutability': 'nonpayable',
+        'type': 'function',
+      }, {
+        'constant': true,
+        'inputs': [],
+        'name': 'totalSupply',
+        'outputs': [{ 'name': '', 'type': 'uint256' }],
+        'payable': false,
+        'stateMutability': 'view',
+        'type': 'function',
+      }, {
+        'constant': false,
+        'inputs': [{ 'name': '_from', 'type': 'address' }, { 'name': '_to', 'type': 'address' }, {
+          'name': '_value',
+          'type': 'uint256',
+        }],
+        'name': 'transferFrom',
+        'outputs': [{ 'name': 'success', 'type': 'bool' }],
+        'payable': false,
+        'stateMutability': 'nonpayable',
+        'type': 'function',
+      }, {
+        'constant': true,
+        'inputs': [],
+        'name': 'decimals',
+        'outputs': [{ 'name': '', 'type': 'uint8' }],
+        'payable': false,
+        'stateMutability': 'view',
+        'type': 'function',
+      }, {
+        'constant': true,
+        'inputs': [],
+        'name': 'version',
+        'outputs': [{ 'name': '', 'type': 'string' }],
+        'payable': false,
+        'stateMutability': 'view',
+        'type': 'function',
+      }, {
+        'constant': true,
+        'inputs': [{ 'name': '_owner', 'type': 'address' }],
+        'name': 'balanceOf',
+        'outputs': [{ 'name': 'balance', 'type': 'uint256' }],
+        'payable': false,
+        'stateMutability': 'view',
+        'type': 'function',
+      }, {
+        'constant': true,
+        'inputs': [],
+        'name': 'symbol',
+        'outputs': [{ 'name': '', 'type': 'string' }],
+        'payable': false,
+        'stateMutability': 'view',
+        'type': 'function',
+      }, {
+        'constant': false,
+        'inputs': [{ 'name': '_to', 'type': 'address' }, { 'name': '_value', 'type': 'uint256' }],
+        'name': 'transfer',
+        'outputs': [{ 'name': 'success', 'type': 'bool' }],
+        'payable': false,
+        'stateMutability': 'nonpayable',
+        'type': 'function',
+      }, {
+        'constant': false,
+        'inputs': [{ 'name': '_spender', 'type': 'address' }, {
+          'name': '_value',
+          'type': 'uint256',
+        }, { 'name': '_extraData', 'type': 'bytes' }],
+        'name': 'approveAndCall',
+        'outputs': [{ 'name': 'success', 'type': 'bool' }],
+        'payable': false,
+        'stateMutability': 'nonpayable',
+        'type': 'function',
+      }, {
+        'constant': true,
+        'inputs': [{ 'name': '_owner', 'type': 'address' }, { 'name': '_spender', 'type': 'address' }],
+        'name': 'allowance',
+        'outputs': [{ 'name': 'remaining', 'type': 'uint256' }],
+        'payable': false,
+        'stateMutability': 'view',
+        'type': 'function',
+      }, {
+        'inputs': [{ 'name': '_initialAmount', 'type': 'uint256' }, {
+          'name': '_tokenName',
+          'type': 'string',
+        }, { 'name': '_decimalUnits', 'type': 'uint8' }, { 'name': '_tokenSymbol', 'type': 'string' }],
+        'payable': false,
+        'stateMutability': 'nonpayable',
+        'type': 'constructor',
+      }, { 'payable': false, 'stateMutability': 'nonpayable', 'type': 'fallback' }, {
+        'anonymous': false,
+        'inputs': [{ 'indexed': true, 'name': '_from', 'type': 'address' }, {
+          'indexed': true,
+          'name': '_to',
+          'type': 'address',
+        }, { 'indexed': false, 'name': '_value', 'type': 'uint256' }],
+        'name': 'Transfer',
+        'type': 'event',
+      }, {
+        'anonymous': false,
+        'inputs': [{ 'indexed': true, 'name': '_owner', 'type': 'address' }, {
+          'indexed': true,
+          'name': '_spender',
+          'type': 'address',
+        }, { 'indexed': false, 'name': '_value', 'type': 'uint256' }],
+        'name': 'Approval',
+        'type': 'event',
+      }])
 
       return humanstandardtokenContract.new(
         _initialAmount,
@@ -625,8 +506,8 @@ const initialize = async () => {
 
     encryptMessageInput.onkeyup = () => {
       if (
-          !getEncryptionKeyButton.disabled &&
-          encryptMessageInput.value.length > 0
+        !getEncryptionKeyButton.disabled &&
+        encryptMessageInput.value.length > 0
       ) {
         if (encryptButton.disabled) {
           encryptButton.disabled = false
@@ -639,11 +520,11 @@ const initialize = async () => {
     encryptButton.onclick = () => {
       try {
         ciphertextDisplay.innerText = web3.toHex(JSON.stringify(
-            encrypt(
-                encryptionKeyDisplay.innerText,
-                { 'data': encryptMessageInput.value },
-                'x25519-xsalsa20-poly1305',
-            ),
+          encrypt(
+            encryptionKeyDisplay.innerText,
+            { 'data': encryptMessageInput.value },
+            'x25519-xsalsa20-poly1305',
+          ),
         ))
         decryptButton.disabled = false
       } catch (error) {
@@ -664,7 +545,7 @@ const initialize = async () => {
     }
   }
 
-  function handleNewAccounts (newAccounts) {
+  function handleNewAccounts(newAccounts) {
     accounts = newAccounts
     accountsDiv.innerHTML = accounts
     if (isMetaMaskConnected()) {
@@ -673,15 +554,15 @@ const initialize = async () => {
     updateButtons()
   }
 
-  function handleNewChain (chainId) {
+  function handleNewChain(chainId) {
     chainIdDiv.innerHTML = chainId
   }
 
-  function handleNewNetwork (networkId) {
+  function handleNewNetwork(networkId) {
     networkDiv.innerHTML = networkId
   }
 
-  async function getNetworkAndChainId () {
+  async function getNetworkAndChainId() {
     try {
       const chainId = await ethereum.request({
         method: 'eth_chainId',
@@ -698,10 +579,10 @@ const initialize = async () => {
   }
 
   updateButtons()
-
   if (isMetaMaskInstalled()) {
 
     ethereum.autoRefreshOnNetworkChange = false
+
     getNetworkAndChainId()
 
     ethereum.on('chainChanged', handleNewChain)
@@ -721,7 +602,7 @@ const initialize = async () => {
 
 window.addEventListener('DOMContentLoaded', initialize)
 
-function getPermissionsDisplayString (permissionsArray) {
+function getPermissionsDisplayString(permissionsArray) {
   if (permissionsArray.length === 0) {
     return 'No permissions found.'
   }
