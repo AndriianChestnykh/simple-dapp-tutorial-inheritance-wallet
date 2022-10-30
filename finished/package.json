@@ -7,6 +7,7 @@
     "lint": "eslint . --ext js,json && prettier ./src -c",
     "lint:fix": "eslint . --fix --ext js,json && prettier ./src -c --write",
     "start": "webpack-dev-server",
+    "start:with:wallet:deploy": "npm run hardhat:deploy && npm run start",
     "build": "webpack --mode production",
     "test": "yarn lint",
     "prepare": "yarn test && yarn build",

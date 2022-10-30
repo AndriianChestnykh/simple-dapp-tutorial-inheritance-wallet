@@ -3,8 +3,10 @@ import MetaMaskOnboarding from '@metamask/onboarding'
 import { ethers } from 'ethers'
 
 import WalletArtifact from '../artifacts/contracts/Wallet.sol/Wallet.json'
+import { address } from '../walletAddress.json'
 
 const { abi: walletAbi, bytecode: walletBytecode } = WalletArtifact
+let walletAddress = address
 const currentUrl = new URL(window.location.href)
 const forwarderOrigin = currentUrl.hostname === 'localhost'
   ? 'http://localhost:9010'
@@ -34,7 +36,9 @@ const permissionsResult = document.getElementById('permissionsResult')
 const deployButton = document.getElementById('deployButton')
 const depositButton = document.getElementById('depositButton')
 const withdrawButton = document.getElementById('withdrawButton')
+const balanceButton = document.getElementById('balanceButton')
 const contractStatus = document.getElementById('contractStatus')
+const contractBalance = document.getElementById('contractBalance')
 
 // Send Eth Section
 const sendButton = document.getElementById('sendButton')
@@ -71,6 +75,7 @@ const initialize = async () => {
   }
 
   const provider = new ethers.providers.Web3Provider(window.ethereum)
+  let wallet = new ethers.Contract(walletAddress, walletAbi, provider)
 
   let accounts
   let accountButtonsInitialized = false
@@ -100,9 +105,16 @@ const initialize = async () => {
 
     const signer = provider.getSigner(0)
     const Wallet = new ethers.ContractFactory(walletAbi, walletBytecode, signer)
-    const wallet = await Wallet.deploy(signer.getAddress(), gracePeriodBlocks, ownerID, heirID, { value: walletAmount })
+    wallet = await Wallet.deploy(signer.getAddress(), gracePeriodBlocks, ownerID, heirID, { value: walletAmount })
     await wallet.deployed()
     contractStatus.innerHTML = `Contract successfully deployed to ${wallet.address}`
+    walletAddress = wallet.address
+    balanceButton.disabled = false
+  }
+
+  balanceButton.onclick = async () => {
+    const balance = await provider.getBalance(wallet.address)
+    contractBalance.innerHTML = `Balance: ${ethers.utils.formatEther(balance)} ETH`
   }
 
   const isMetaMaskConnected = () => accounts && accounts.length > 0
@@ -160,6 +172,10 @@ const initialize = async () => {
       onboardButton.innerText = 'Connect'
       onboardButton.onclick = onClickConnect
       onboardButton.disabled = false
+    }
+
+    if (wallet) {
+      balanceButton.disabled = false
     }
   }
 

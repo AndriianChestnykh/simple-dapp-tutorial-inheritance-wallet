@@ -5,6 +5,7 @@
 // will compile your contracts, add the Hardhat Runtime Environment's members to the
 // global scope, and execute the script.
 const hre = require("hardhat");
+const fs = require('fs');
 
 async function main() {
   const controler = (await hre.ethers.getSigners())[0].address;
@@ -22,6 +23,8 @@ async function main() {
   console.log(
     `Wallet contract deployed to ${wallet.address}`
   );
+
+  fs.writeFileSync("./walletAddress.json", JSON.stringify({ address: wallet.address }));
 }
 
 // We recommend this pattern to be able to use async/await everywhere
