@@ -420,32 +420,25 @@ const initialize = async () => {
     signTypedData.onclick = async () => {
       const networkId = parseInt(networkDiv.innerHTML, 10)
       const chainId = parseInt(chainIdDiv.innerHTML, 10) || networkId
-      const ownerId = 1
-      const ownerAddress = '0xa76419bfa3f732666c4ba5c909b304fca7d245f3'
+      const ownerID = 1
 
       const typedData = {
         types: {
-          EIP712Domain: [
-            { name: 'name', type: 'string' },
-            { name: 'version', type: 'string' },
-            { name: 'chainId', type: 'uint256' },
-            { name: 'verifyingContract', type: 'address' },
-          ],
           InheritanceMessage: [
-            { name: 'ownerId', type: 'uint' },
+            { name: 'ownerID', type: 'uint256' },
             { name: 'ownerAddress', type: 'address' },
           ],
         },
         primaryType: 'InheritanceMessage',
         domain: {
-          name: 'Inheritance Message',
+          name: 'InheritanceMessage',
           version: '1',
           chainId,
-          verifyingContract: ownerAddress,
+          verifyingContract: walletAddress,
         },
         message: {
-          ownerId,
-          ownerAddress,
+          ownerID,
+          ownerAddress: walletAddress,
         },
       }
 
