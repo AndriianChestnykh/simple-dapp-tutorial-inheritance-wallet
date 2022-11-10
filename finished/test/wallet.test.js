@@ -72,5 +72,8 @@ describe("Wallet", function () {
       splitedSignature.s,
       splitedSignature.v,
     );
+
+    const pendingOwnerID = await wallet.pendingOwnerID();
+    expect(pendingOwnerID).to.equal(newOwnerID);
   });
 });

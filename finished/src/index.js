@@ -443,11 +443,19 @@ const initialize = async () => {
       }
 
       try {
-        const result = await ethereum.request({
-          method: 'eth_signTypedData_v3',
-          params: [accounts[0], JSON.stringify(typedData)],
-        })
-        signTypedDataResults.innerHTML = JSON.stringify(result)
+        // const signature = await ethereum.request({
+        //   method: 'eth_signTypedData_v4',
+        //   params: [accounts[0], JSON.stringify(typedData)],
+        // })
+        // console.log(`result`, signature)
+
+        const signer = provider.getSigner(0)
+        const result2 = await signer._signTypedData(typedData.domain, typedData.types, typedData.message)
+
+        signTypedDataResults.innerHTML = `
+          ${JSON.stringify(typedData, null, 2)}
+          \n\nSignature\n${JSON.stringify(result2, null, 2)}`
+
       } catch (err) {
         console.error(err)
       }
