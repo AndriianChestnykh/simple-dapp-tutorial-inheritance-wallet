@@ -10,21 +10,19 @@ const { splitSignature } = require("ethers/lib/utils");
 const { recoverTypedSignature, recoverTypedSignature_v4, signTypedData } = require("eth-sig-util");
 
 describe("Wallet", function () {
-  let wallet, controler, gracePeriodBlocks, ownerID, heirID, walletAmount, signer;
+  let wallet, controler, gracePeriodBlocks, walletAmount, ownerSigner, heirSigner;
 
   beforeEach(async function () {
-    signer = (await ethers.getSigners())[0];
+    ownerSigner = (await ethers.getSigners())[0];
+    heirSigner = (await ethers.getSigners())[1];
 
-    controler = signer.address;
+    controler = ownerSigner.address;
     gracePeriodBlocks = 10;
-    ownerID = 1;
-    heirID = 2;
 
     walletAmount = ethers.utils.parseEther("1");
 
     const Wallet = await ethers.getContractFactory("Wallet");
-    wallet = await Wallet.deploy(controler, gracePeriodBlocks, ownerID, heirID, { value: walletAmount });
-
+    wallet = await Wallet.deploy(controler, gracePeriodBlocks, { value: walletAmount });
     wallet.deployed();
 
     console.log(
@@ -33,16 +31,13 @@ describe("Wallet", function () {
   });
 
   it("Should init controller change", async () => {
-    const chainId = await signer.getChainId();
-    const ownerID = 1;
-    const newOwnerID = 2;
+    const chainId = await ownerSigner.getChainId();
     const walletAddress = wallet.address;
 
     const typedData = {
       types: {
         InheritanceMessage: [
-          { name: 'ownerID', type: 'uint256' },
-          { name: 'ownerAddress', type: 'address' },
+          { name: 'heirAddress', type: 'address' },
         ],
       },
       primaryType: 'InheritanceMessage',
@@ -53,27 +48,24 @@ describe("Wallet", function () {
         verifyingContract: walletAddress,
       },
       message: {
-        ownerID,
-        ownerAddress: walletAddress,
+        heirAddress: heirSigner.address,
       },
     };
 
-    console.log("signer address (tests): " + signer.address);
-    const signature = await signer._signTypedData(typedData.domain, typedData.types, typedData.message);
+    console.log("signer address (tests): " + ownerSigner.address);
+    const signature = await ownerSigner._signTypedData(typedData.domain, typedData.types, typedData.message);
     console.log("signature (tests): " + signature);
     const splitedSignature = splitSignature(signature);
-    const newController = (await ethers.getSigners())[1].address;
 
-    await wallet.initControllerChange(
-      newController,
-      newOwnerID,
-      { ownerID: 1, ownerAddress: wallet.address },
+    await wallet.connect(heirSigner).initControllerChange(
+      heirSigner.address,
+      { heirAddress: heirSigner.address },
       splitedSignature.r,
       splitedSignature.s,
       splitedSignature.v,
     );
 
-    const pendingOwnerID = await wallet.pendingOwnerID();
-    expect(pendingOwnerID).to.equal(newOwnerID);
+    const pendingController = await wallet.pendingController();
+    expect(pendingController).to.equal(heirSigner.address);
   });
 });

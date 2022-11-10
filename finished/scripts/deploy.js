@@ -10,13 +10,11 @@ const fs = require('fs');
 async function main() {
   const controler = (await hre.ethers.getSigners())[0].address;
   const gracePeriodBlocks = 10;
-  const ownerID = 1;
-  const heirID = 2;
 
   const walletAmount = hre.ethers.utils.parseEther("1");
 
   const Wallet = await hre.ethers.getContractFactory("Wallet");
-  const wallet = await Wallet.deploy(controler, gracePeriodBlocks, ownerID, heirID, { value: walletAmount });
+  const wallet = await Wallet.deploy(controler, gracePeriodBlocks, { value: walletAmount });
 
   await wallet.deployed();
 

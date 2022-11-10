@@ -99,13 +99,11 @@ const initialize = async () => {
 
   deployButton.onclick = async () => {
     const gracePeriodBlocks = 10
-    const ownerID = 1
-    const heirID = 2
     const walletAmount = ethers.utils.parseEther('1.0')
 
     const signer = provider.getSigner(0)
     const Wallet = new ethers.ContractFactory(walletAbi, walletBytecode, signer)
-    wallet = await Wallet.deploy(signer.getAddress(), gracePeriodBlocks, ownerID, heirID, { value: walletAmount })
+    wallet = await Wallet.deploy(signer.getAddress(), gracePeriodBlocks, { value: walletAmount })
     await wallet.deployed()
     contractStatus.innerHTML = `Contract successfully deployed to ${wallet.address}`
     walletAddress = wallet.address
@@ -420,13 +418,13 @@ const initialize = async () => {
     signTypedData.onclick = async () => {
       const networkId = parseInt(networkDiv.innerHTML, 10)
       const chainId = parseInt(chainIdDiv.innerHTML, 10) || networkId
-      const ownerID = 1
+      const owner = provider.getSigner('0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266')
+      const heir = provider.getSigner('0x70997970C51812dc3A010C7d01b50e0d17dc79C8')
 
       const typedData = {
         types: {
           InheritanceMessage: [
-            { name: 'ownerID', type: 'uint256' },
-            { name: 'ownerAddress', type: 'address' },
+            { name: 'heirAddress', type: 'address' },
           ],
         },
         primaryType: 'InheritanceMessage',
@@ -437,8 +435,7 @@ const initialize = async () => {
           verifyingContract: walletAddress,
         },
         message: {
-          ownerID,
-          ownerAddress: walletAddress,
+          heirAddress: heir._address,
         },
       }
 
@@ -449,8 +446,8 @@ const initialize = async () => {
         // })
         // console.log(`result`, signature)
 
-        const signer = provider.getSigner(0)
-        const result2 = await signer._signTypedData(typedData.domain, typedData.types, typedData.message)
+
+        const result2 = await owner._signTypedData(typedData.domain, typedData.types, typedData.message)
 
         signTypedDataResults.innerHTML = `
           ${JSON.stringify(typedData, null, 2)}
