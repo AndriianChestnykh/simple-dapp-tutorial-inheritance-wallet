@@ -39,6 +39,7 @@ const withdrawButton = document.getElementById('withdrawButton')
 const balanceButton = document.getElementById('balanceButton')
 const contractStatus = document.getElementById('contractStatus')
 const contractBalance = document.getElementById('contractBalance')
+const accBalance = document.getElementById('accBalance')
 
 // Send Eth Section
 const sendButton = document.getElementById('sendButton')
@@ -416,10 +417,18 @@ const initialize = async () => {
      */
 
     signTypedData.onclick = async () => {
+      debugger
       const networkId = parseInt(networkDiv.innerHTML, 10)
-      const chainId = parseInt(chainIdDiv.innerHTML, 10) || networkId
-      const owner = provider.getSigner('0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266')
-      const heir = provider.getSigner('0x70997970C51812dc3A010C7d01b50e0d17dc79C8')
+      // const chainId = parseInt(chainIdDiv.innerHTML, 10) || networkId
+      const chainId = 1337 || networkId
+      // const owner = provider.getSigner('0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266')
+      const _accounts = await ethereum.request({
+        method: 'eth_accounts',
+      })
+
+      const owner = provider.getSigner(_accounts[0])
+      const inputAddr = document.getElementById('inputAddr')
+      const heir = provider.getSigner(inputAddr.value)
 
       const typedData = {
         types: {
@@ -559,7 +568,7 @@ const initialize = async () => {
     }
   }
 
-  function handleNewAccounts(newAccounts) {
+  function handleNewAccounts (newAccounts) {
     accounts = newAccounts
     accountsDiv.innerHTML = accounts
     if (isMetaMaskConnected()) {
@@ -568,15 +577,15 @@ const initialize = async () => {
     updateButtons()
   }
 
-  function handleNewChain(chainId) {
+  function handleNewChain (chainId) {
     chainIdDiv.innerHTML = chainId
   }
 
-  function handleNewNetwork(networkId) {
+  function handleNewNetwork (networkId) {
     networkDiv.innerHTML = networkId
   }
 
-  async function getNetworkAndChainId() {
+  async function getNetworkAndChainId () {
     try {
       const chainId = await ethereum.request({
         method: 'eth_chainId',
@@ -592,12 +601,35 @@ const initialize = async () => {
     }
   }
 
+  async function getAccResults () {
+    try {
+      const _accounts = await ethereum.request({
+        method: 'eth_accounts',
+      })
+      getAccountsResults.innerHTML = _accounts[0] || 'Not able to get accounts'
+    } catch (err) {
+      console.error(err)
+      getAccountsResults.innerHTML = `Error: ${err.message}`
+    }
+  }
+
+  async function getBalance () {
+    try {
+      const balance = await provider.getBalance(wallet.address)
+      accBalance.innerHTML = `Balance: ${ethers.utils.formatEther(balance)} ETH`
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
   updateButtons()
   if (isMetaMaskInstalled()) {
 
     ethereum.autoRefreshOnNetworkChange = false
 
     getNetworkAndChainId()
+    getAccResults()
+    getBalance()
 
     ethereum.on('chainChanged', handleNewChain)
     ethereum.on('networkChanged', handleNewNetwork)
@@ -616,7 +648,7 @@ const initialize = async () => {
 
 window.addEventListener('DOMContentLoaded', initialize)
 
-function getPermissionsDisplayString(permissionsArray) {
+function getPermissionsDisplayString (permissionsArray) {
   if (permissionsArray.length === 0) {
     return 'No permissions found.'
   }
