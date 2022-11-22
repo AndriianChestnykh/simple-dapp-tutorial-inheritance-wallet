@@ -19,31 +19,68 @@ async function deployWalletFixture() {
   const wallet = await Wallet.deploy(ownerSigner.address, gracePeriodBlocks, { value: walletAmount });
   wallet.deployed();
 
-  return { wallet, gracePeriodBlocks, walletAmount, ownerSigner, heirSigner, receiverSigner }
+  const tokenERC20Supply = 1000;
+  const TokenERC20 = await ethers.getContractFactory("GLDToken");
+  const tokenERC20 = await TokenERC20.deploy(wallet.address, tokenERC20Supply);
+  tokenERC20.deployed();
+
+  const TokenERC721 = await ethers.getContractFactory("GameItem");
+  const tokenERC721 = await TokenERC721.deploy();
+  tokenERC721.deployed();
+  await tokenERC721.awardItem(wallet.address, "https://game.example/item-id-1.json");
+  await tokenERC721.awardItem(wallet.address, "https://game.example/item-id-2.json");
+  await tokenERC721.awardItem(wallet.address, "https://game.example/item-id-3.json");
+
+  return { wallet, gracePeriodBlocks, walletAmount, tokenERC20, tokenERC721, ownerSigner, heirSigner, receiverSigner }
+}
+
+async function checkCanSend(wallet, signer, receiverSigner, amount, tokenId, tokenERC20, tokenERC721) {
+  await expect(
+    wallet.connect(signer).send(receiverSigner.address, amount)
+  ).to.changeEtherBalance(receiverSigner, amount);
+
+  await expect(
+    wallet.connect(signer).transferERC20(tokenERC20.address, receiverSigner.address, 10)
+  ).to.changeTokenBalance(tokenERC20, receiverSigner, 10);
+
+  await wallet.connect(signer).transferERC721(tokenERC721.address, receiverSigner.address, tokenId);
+  expect(await tokenERC721.ownerOf(tokenId)).to.be.equal(receiverSigner.address);
+}
+
+async function checkCanNotSend(wallet, signer, receiverSigner, amount, tokenId, tokenERC20, tokenERC721) {
+  await expect(
+    wallet.connect(signer).send(receiverSigner.address, amount)
+  ).to.be.revertedWith("Controller check failed");
+
+  await expect(
+    wallet.connect(signer).transferERC20(tokenERC20.address, receiverSigner.address, 10)
+  ).to.be.revertedWith("Controller check failed");
+
+  await expect(
+    wallet.connect(signer).transferERC721(tokenERC721.address, receiverSigner.address, tokenId)
+  ).to.be.revertedWith("Controller check failed");
 }
 
 describe("Wallet life cycle", function () {
-  let wallet, gracePeriodBlocks, walletAmount, ownerSigner, heirSigner, receiverSigner;
+  let wallet, gracePeriodBlocks, walletAmount, tokenERC20, tokenERC721, ownerSigner, heirSigner, receiverSigner;
   let pendingControllerCommitBlock;
 
   before(async function () {
-    ({ wallet, gracePeriodBlocks, walletAmount, ownerSigner, heirSigner, receiverSigner }
+    ({ wallet, gracePeriodBlocks, walletAmount, tokenERC20, tokenERC721, ownerSigner, heirSigner, receiverSigner }
       = await loadFixture(deployWalletFixture)
     );
   });
 
   it("Owner can send any assets", async () => {
     const amount = ethers.utils.parseEther("0.1");
-    await expect(
-      wallet.connect(ownerSigner).send(receiverSigner.address, amount)
-    ).to.changeEtherBalance(receiverSigner, amount);
+    const tokenId = 0;
+    await checkCanSend(wallet, ownerSigner, receiverSigner, amount, tokenId, tokenERC20, tokenERC721);
   });
 
   it("Heir can't send any assets", async () => {
     const amount = ethers.utils.parseEther("0.1");
-    await expect(
-      wallet.connect(heirSigner).send(receiverSigner.address, amount)
-    ).to.be.revertedWith("Controller check failed");
+    let tokenId = 1;
+    await checkCanNotSend(wallet, heirSigner, receiverSigner, amount, tokenId, tokenERC20, tokenERC721);
   });
 
   it("Heir can init controller change by IM", async () => {
@@ -91,6 +128,15 @@ describe("Wallet life cycle", function () {
     await expect(
       wallet.connect(heirSigner).send(receiverSigner.address, amount)
     ).to.be.revertedWith("Controller check failed");
+
+    await expect(
+      wallet.connect(heirSigner).transferERC20(tokenERC20.address, receiverSigner.address, 10)
+    ).to.be.revertedWith("Controller check failed");
+
+    let tokenId = 1;
+    await expect(
+      wallet.connect(heirSigner).transferERC721(tokenERC721.address, receiverSigner.address, tokenId)
+    ).to.be.revertedWith("Controller check failed");
   });
 
   it("Heir can't finalize controller change yet", async () => {
@@ -109,15 +155,13 @@ describe("Wallet life cycle", function () {
 
   it("Heir can send any assets", async () => {
     const amount = ethers.utils.parseEther("0.1");
-    await expect(
-      wallet.connect(heirSigner).send(receiverSigner.address, amount)
-    ).to.changeEtherBalance(receiverSigner, amount);
+    const tokenId = 1;
+    await checkCanSend(wallet, heirSigner, receiverSigner, amount, tokenId, tokenERC20, tokenERC721);
   });
 
   it("Owner can't send any assets", async () => {
     const amount = ethers.utils.parseEther("0.1");
-    await expect(
-      wallet.connect(ownerSigner).send(receiverSigner.address, amount)
-    ).to.be.revertedWith("Controller check failed");
+    const tokenId = 2;
+    await checkCanNotSend(wallet, ownerSigner, receiverSigner, amount, tokenId, tokenERC20, tokenERC721);
   });
 });
