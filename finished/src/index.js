@@ -417,10 +417,9 @@ const initialize = async () => {
      */
 
     signTypedData.onclick = async () => {
-      debugger
       const networkId = parseInt(networkDiv.innerHTML, 10)
       // const chainId = parseInt(chainIdDiv.innerHTML, 10) || networkId
-      const chainId = 1337 || networkId
+      const chainId = 31337 || networkId
       // const owner = provider.getSigner('0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266')
       const _accounts = await ethereum.request({
         method: 'eth_accounts',

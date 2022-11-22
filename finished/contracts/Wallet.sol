@@ -1,4 +1,9 @@
+// SPDX-License-Identifier: MIT
+
 pragma solidity ^0.8.17;
+
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 contract Wallet {
     uint256 private constant CHAIN_ID = 31337; // for Hardhat local test net. Change it to suit your network.
@@ -25,7 +30,7 @@ contract Wallet {
         );
 
     address payable public controller;
-    uint256 public gracePeriodBlocks;
+    uint256 private _gracePeriodBlocks;
     address public pendingController;
     uint256 public pendingControllerCommitBlock;
 
@@ -33,45 +38,85 @@ contract Wallet {
         address heirAddress;
     }
 
-    constructor(address _controler, uint256 _gracePeriodBlocks) payable {
-        controller = payable(_controler);
-        gracePeriodBlocks = _gracePeriodBlocks;
-    }
-
-    function changeControllerInstantly(
-        address newController
-    ) public {
-        controller = payable(newController);
-    }
-
     event ControllerTransferInitiated(address indexed newController);
 
     event ControllerTransferFinalized(address indexed newController);
 
+    constructor(address controler, uint256 gracePeriodBlocks) payable {
+        controller = payable(controler);
+        _gracePeriodBlocks = gracePeriodBlocks;
+    }
+
+    function changeControllerInstantly(address newController) public {
+        controller = payable(newController);
+    }
+
     function initControllerChange(
-        address _newController,
-        InheritanceMessage memory _im,
+        address newController,
+        InheritanceMessage memory im,
         bytes32 sigR,
         bytes32 sigS,
         uint8 sigV
     ) public {
         require(
-            msg.sender == _im.heirAddress,
+            msg.sender == im.heirAddress,
             "Only the heir can initiate a controller change"
         );
         require(
-            ecrecover(hashInheritanceMessage(_im), sigV, sigR, sigS) ==
+            ecrecover(_hashInheritanceMessage(im), sigV, sigR, sigS) ==
                 controller,
             "The inheritance message is not signed by the controller"
         );
 
-        pendingController = _newController;
+        pendingController = newController;
         pendingControllerCommitBlock = block.number;
 
-        emit ControllerTransferInitiated(_newController);
+        emit ControllerTransferInitiated(newController);
     }
 
-    function hashInheritanceMessage(
+    function finalizeControllerChange() public {
+        require(
+            pendingController != address(0),
+            "No pending controller is waiting"
+        );
+        require(
+            block.number >= pendingControllerCommitBlock + _gracePeriodBlocks,
+            "Grace period has not passed yet"
+        );
+        controller = payable(pendingController);
+
+        emit ControllerTransferFinalized(pendingController);
+    }
+
+    function cancelControllerChange() public {
+        pendingController = address(0);
+        pendingControllerCommitBlock = 0;
+    }
+
+    function send(address payable to, uint256 amount) public {
+        require(msg.sender == controller, "Controller check failed");
+        to.transfer(amount);
+    }
+
+    function transferERC20(
+        address erc20contract,
+        address to,
+        uint256 amount
+    ) public {
+        require(msg.sender == controller, "Controller check failed");
+        IERC20(erc20contract).transfer(to, amount);
+    }
+
+    function transferERC721(
+        address erc721contract,
+        address to,
+        uint256 tokenId
+    ) public {
+        require(msg.sender == controller, "Controller check failed");
+        IERC721(erc721contract).transferFrom(address(this), to, tokenId);
+    }
+
+    function _hashInheritanceMessage(
         InheritanceMessage memory _msg
     ) private view returns (bytes32) {
         return
@@ -87,26 +132,5 @@ contract Wallet {
                     )
                 )
             );
-    }
-
-    function finalizeControllerChange() public {
-        require(pendingController != address(0), "No pending controller is waiting");
-        require(
-            block.number >= pendingControllerCommitBlock + gracePeriodBlocks,
-            "Grace period has not passed"
-        );
-        controller = payable(pendingController);
-
-        emit ControllerTransferFinalized(pendingController);
-    }
-
-    function cancelControllerChange() public {
-        pendingController = address(0);
-        pendingControllerCommitBlock = 0;
-    }
-
-    function send(address payable _to, uint256 _amount) public {
-        require(msg.sender == controller, "You are not the controller");
-        _to.transfer(_amount);
     }
 }
